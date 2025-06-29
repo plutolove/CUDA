@@ -30,3 +30,25 @@ void naiveSgemm_cpp(float* a, float* b, float* c, int M, int N, int K) {
     }
     cudaDeviceSynchronize();
 }
+
+float testPerformance(void (*gemm)(float*, float*, float*, int, int, int),
+                      float* d_a, float* d_b, float* d_c, int M, int N, int K,
+                      int repeat) {
+    cudaEvent_t start, end;
+    cudaEventCreate(&start);
+    cudaEventCreate(&end);
+    cudaEventRecord(start);
+
+    for (int i = 0; i < repeat; i++) {
+        gemm(d_a, d_b, d_c, M, N, K);
+    }
+
+    cudaEventRecord(end);
+    cudaEventSynchronize(end);
+
+    float msec, sec;
+    cudaEventElapsedTime(&msec, start, end);
+    sec = msec / 1000.0 / repeat;
+
+    return sec;
+}

@@ -6,6 +6,10 @@
 
 #define OFFSET(row, col, ld) ((row) * (ld) + (col))
 
+float testPerformance(void (*gemm)(float*, float*, float*, int, int, int),
+                      float* d_a, float* d_b, float* d_c, const int M,
+                      const int N, const int K, const int repeat);
+
 void cpuSgemm(float* a, float* b, float* c, int M, int K, int N) {
     for (int m = 0; m < M; m++) {
         for (int n = 0; n < N; n++) {
@@ -21,16 +25,18 @@ void cpuSgemm(float* a, float* b, float* c, int M, int K, int N) {
 void naiveSgemm_cpp(float* a, float* b, float* c, int M, int N, int K);
 
 int main() {
-    GPUTensor<float> lhs({16, 64});
-    GPUTensor<float> rhs({64, 32});
+    GPUTensor<float> lhs({512, 512});
+    GPUTensor<float> rhs({512, 512});
 
-    GPUTensor<float> result({16, 32});
+    GPUTensor<float> result({512, 512});
     lhs.random_uniform();
     rhs.random_uniform();
 
-    naiveSgemm_cpp(lhs.mutable_data(), rhs.mutable_data(),
-                   result.mutable_data(), 16, 32, 64);
+    auto tc =
+        testPerformance(&naiveSgemm_cpp, lhs.mutable_data(), rhs.mutable_data(),
+                        result.mutable_data(), 512, 512, 512, 10);
 
+    std::cerr << tc << std::endl;
     // std::cerr << lhs.to_string() << std::endl;
     // std::cerr << rhs.to_string() << std::endl;
     std::cerr << result.to_string() << std::endl;
