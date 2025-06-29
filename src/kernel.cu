@@ -1,7 +1,5 @@
 #include <iostream>
 
-#include "cuda_runtime.h"
-
 #define OFFSET(row, col, ld) ((row) * (ld) + (col))
 
 const int BM = 32, BN = 32;
