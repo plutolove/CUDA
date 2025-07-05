@@ -26,7 +26,7 @@ struct BlockComparator {
 class PinBlockCacheGroup {
  public:
   using BlockCache = std::set<Block, BlockComparator>;
-  PinBlockCacheGroup(size_t alloc_block_num = 128);
+  PinBlockCacheGroup(size_t alloc_block_num, size_t per_block_size);
   ~PinBlockCacheGroup();
 
   void* alloc(size_t size);
@@ -46,12 +46,13 @@ class PinBlockCacheGroup {
 
 class PinBlockCache {
  public:
-  PinBlockCache(size_t group_num, size_t pre_alloc_block_per_group)
+  PinBlockCache(size_t group_num, size_t pre_alloc_block_per_group,
+                size_t per_block_size)
       : cache_group_size(group_num) {
     cache_groups_.resize(group_num);
     for (size_t i = 0; i < group_num; i++) {
-      cache_groups_[i] =
-          std::make_shared<PinBlockCacheGroup>(pre_alloc_block_per_group);
+      cache_groups_[i] = std::make_shared<PinBlockCacheGroup>(
+          pre_alloc_block_per_group, per_block_size);
     }
   }
 
@@ -59,6 +60,8 @@ class PinBlockCache {
 
   void free(void* ptr);
 
+  // 防止size分布太集中，加上thread id
+  // 适用于并发环境
   size_t hash(size_t size) {
     static std::hash<size_t> size_hash{};
     static std::hash<std::thread::id> tid_hash{};
@@ -74,7 +77,7 @@ class PinBlockCache {
   std::shared_ptr<PinBlockCacheGroup> getCacheGroup(void* ptr) {
     auto iter = block2group.find(ptr);
     if (iter == block2group.end()) {
-      std::cerr << "------ error not found group idx: " << ptr << std::endl;
+      // std::cerr << "------ error not found group idx: " << ptr << std::endl;
       return nullptr;
     }
     return cache_groups_[iter->second];
@@ -83,7 +86,7 @@ class PinBlockCache {
   void setBlock2Group(void* ptr, size_t idx) {
     auto iter = block2group.find(ptr);
     if (iter != block2group.end()) {
-      std::cerr << "---- ptr repeated: " << ptr << "\t" << idx << std::endl;
+      // std::cerr << "---- ptr repeated: " << ptr << "\t" << idx << std::endl;
     }
     block2group.insert(ptr, idx);
   }
@@ -91,7 +94,7 @@ class PinBlockCache {
   void eraseBlock2Group(void* ptr) {
     auto iter = block2group.find(ptr);
     if (iter == block2group.end()) {
-      std::cerr << "---- ptr not found: " << ptr << std::endl;
+      // std::cerr << "---- ptr not found: " << ptr << std::endl;
     }
     block2group.erase(ptr);
   }
@@ -111,7 +114,7 @@ class PinBlockCache {
 };
 
 inline PinBlockCache& getThreadLocalCache() {
-  static PinBlockCache cache_(32, 64);
+  static PinBlockCache cache_(32, 64, 64);
   return cache_;
 }
 

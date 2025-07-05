@@ -57,36 +57,36 @@ auto getThreadPool() {
 size_t random_size() {
     static std::random_device rd;
     static std::mt19937 generator(rd());
-    static std::uniform_int_distribution<int> distribution(1, 128);
+    static std::uniform_int_distribution<int> distribution(1, 256);
     return distribution(generator);
 }
 
 int main() {
     auto pool = getThreadPool();
 
-    for (size_t rep = 0; rep < 50; rep++) {
-        std::vector<folly::Future<void*>> tasks;
-        tasks.reserve(64);
-        for (size_t i = 0; i < 64; i++) {
-            tasks.push_back(folly::via(pool.get()).thenValue([](auto&&) {
-                return PinMemAllocator::alloc(random_size());
-            }));
-        }
-        std::cerr << "------- wait" << std::endl;
-        auto result = folly::collectAll(tasks).get();
-        std::cerr << "------- wait finished: " << result.size() << std::endl;
-        for (auto&& val : result) {
-            std::cerr << val.value() << std::endl;
-        }
-
-        std::cerr << "before free: " << result.size() << " "
-                  << PinMemAllocator::getAllocBlockNum() << std::endl;
-        for (auto&& val : result) {
-            PinMemAllocator::free(val.value());
-        }
-
-        std::cerr << "after free: " << result.size() << " "
-                  << PinMemAllocator::getAllocBlockNum() << std::endl;
+    // for (size_t rep = 0; rep < 50; rep++) {
+    std::vector<folly::Future<void*>> tasks;
+    tasks.reserve(64);
+    for (size_t i = 0; i < 64; i++) {
+        tasks.push_back(folly::via(pool.get()).thenValue([](auto&&) {
+            return PinMemAllocator::alloc(random_size());
+        }));
     }
+    std::cerr << "------- wait" << std::endl;
+    auto result = folly::collectAll(tasks).get();
+    std::cerr << "------- wait finished: " << result.size() << std::endl;
+    for (auto&& val : result) {
+        std::cerr << val.value() << std::endl;
+    }
+
+    std::cerr << "before free: " << result.size() << " "
+              << PinMemAllocator::getAllocBlockNum() << std::endl;
+    for (auto&& val : result) {
+        PinMemAllocator::free(val.value());
+    }
+
+    std::cerr << "after free: " << result.size() << " "
+              << PinMemAllocator::getAllocBlockNum() << std::endl;
+    // }
     return 0;
 }

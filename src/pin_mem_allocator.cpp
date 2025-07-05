@@ -32,9 +32,10 @@ PinBlockCacheGroup::~PinBlockCacheGroup() {
     }
 }
 
-PinBlockCacheGroup::PinBlockCacheGroup(size_t alloc_block_num) {
+PinBlockCacheGroup::PinBlockCacheGroup(size_t alloc_block_num,
+                                       size_t per_block_size) {
     for (size_t i = 0; i < alloc_block_num; i++) {
-        size_t alloc_size = 64;
+        size_t alloc_size = PowerOf2Ceil(per_block_size);
         void* result;
         auto err = cudaHostAlloc(&result, alloc_size, cudaHostAllocDefault);
         if (err != cudaSuccess || result == nullptr) {
@@ -52,6 +53,7 @@ void* PinBlockCacheGroup::alloc(size_t size) {
     auto iter = free_blocks_.lower_bound(Block{.size = size, .ptr = nullptr});
     void* result{nullptr};
     if (iter == free_blocks_.end()) {
+        // std::cerr << "not found valid size block: " << size << std::endl;
         size_t alloc_size = PowerOf2Ceil(size);
         auto err = cudaHostAlloc(&result, alloc_size, cudaHostAllocDefault);
         if (err != cudaSuccess || result == nullptr) {
@@ -71,7 +73,7 @@ void PinBlockCacheGroup::free(void* ptr) {
     std::lock_guard<std::mutex> lock(mtx_);
     auto iter = alloc_blocks_.find(ptr);
     if (iter == alloc_blocks_.end()) {
-        std::cerr << "not found ptr: " << ptr << std::endl;
+        // std::cerr << "not found ptr: " << ptr << std::endl;
         return;
     }
     free_blocks_.insert(iter->second);
