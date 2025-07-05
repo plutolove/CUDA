@@ -1,7 +1,10 @@
 #pragma once
+#include <time.h>
+
 #include <boost/core/noncopyable.hpp>
 #include <functional>
 #include <numeric>
+#include <ranges>
 #include <string>
 #include <vector>
 

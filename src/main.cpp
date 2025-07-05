@@ -3,6 +3,7 @@
 #include <memory>
 #include <random>
 
+#include "fmt/format.h"
 #include "folly/executors/CPUThreadPoolExecutor.h"
 #include "folly/futures/Future.h"
 #include "pin_mem_allocator.h"
@@ -63,6 +64,8 @@ size_t random_size() {
 
 int main() {
     auto pool = getThreadPool();
+    std::vector<int> a{1, 2, 3};
+    // fmt::format("xxx{}", fmt::join(a, ","));
 
     // for (size_t rep = 0; rep < 50; rep++) {
     std::vector<folly::Future<void*>> tasks;
