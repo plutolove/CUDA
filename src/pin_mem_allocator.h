@@ -8,24 +8,25 @@
 
 #include "folly/concurrency/ConcurrentHashMap.h"
 
-struct Block {
-  size_t size;
-  void* ptr{nullptr};
-};
-
-struct BlockComparator {
-  bool operator()(const Block& lhs, const Block& rhs) const {
-    if (lhs.size != rhs.size) {
-      return lhs.size < rhs.size;
-    }
-    return reinterpret_cast<uintptr_t>(lhs.ptr) <
-           reinterpret_cast<uintptr_t>(rhs.ptr);
-  }
-};
-
 class PinBlockCacheGroup {
  public:
+  struct Block {
+    size_t size;
+    void* ptr{nullptr};
+  };
+
+  struct BlockComparator {
+    bool operator()(const Block& lhs, const Block& rhs) const {
+      if (lhs.size != rhs.size) {
+        return lhs.size < rhs.size;
+      }
+      return reinterpret_cast<uintptr_t>(lhs.ptr) <
+             reinterpret_cast<uintptr_t>(rhs.ptr);
+    }
+  };
+
   using BlockCache = std::set<Block, BlockComparator>;
+
   PinBlockCacheGroup(size_t alloc_block_num, size_t per_block_size);
   ~PinBlockCacheGroup();
 
