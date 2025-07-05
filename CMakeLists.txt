@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.30)
+cmake_minimum_required(VERSION 3.28)
 project(gpu_note LANGUAGES CXX CUDA)
 
 # 可选：设置 CUDA 相关编译选项
@@ -7,10 +7,11 @@ set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)   # 支持 device code 分离编译
 
-find_package(Boost 1.87 REQUIRED)
 find_package(fmt REQUIRED)
+find_package(folly REQUIRED)
+find_package(Boost REQUIRED)
 
-set(SOURCES src/main.cpp src/kernel.cu)
+set(SOURCES src/main.cpp src/kernel.cu src/pin_mem_allocator.cpp)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
@@ -32,4 +33,5 @@ target_compile_options(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME} PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} PRIVATE CUDA::cudart CUDA::curand)
 target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
+target_link_libraries(${PROJECT_NAME} PRIVATE folly glog gflags Boost::context double-conversion event)
 
