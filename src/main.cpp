@@ -3,7 +3,6 @@
 #include <memory>
 #include <random>
 
-#include "cuda_runtime.h"
 #include "folly/executors/CPUThreadPoolExecutor.h"
 #include "folly/futures/Future.h"
 #include "pin_mem_allocator.h"
@@ -58,7 +57,7 @@ auto getThreadPool() {
 size_t random_size() {
     static std::random_device rd;
     static std::mt19937 generator(rd());
-    static std::uniform_int_distribution<int> distribution(1, 62);
+    static std::uniform_int_distribution<int> distribution(1, 128);
     return distribution(generator);
 }
 
@@ -80,9 +79,14 @@ int main() {
             std::cerr << val.value() << std::endl;
         }
 
+        std::cerr << "before free: " << result.size() << " "
+                  << PinMemAllocator::getAllocBlockNum() << std::endl;
         for (auto&& val : result) {
             PinMemAllocator::free(val.value());
         }
+
+        std::cerr << "after free: " << result.size() << " "
+                  << PinMemAllocator::getAllocBlockNum() << std::endl;
     }
     return 0;
 }

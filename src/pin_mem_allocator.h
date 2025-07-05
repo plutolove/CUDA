@@ -1,11 +1,11 @@
 #pragma once
-#include <folly/container/F14Map.h>
-
 #include <cstdint>
+#include <iostream>
 #include <memory>
+#include <mutex>
 #include <set>
+#include <thread>
 
-#include "folly/ConcurrentSkipList.h"
 #include "folly/concurrency/ConcurrentHashMap.h"
 
 struct Block {
@@ -33,6 +33,11 @@ class PinBlockCacheGroup {
 
   void free(void* ptr);
 
+  size_t getAllocBlockNum() const {
+    std::lock_guard<std::mutex> lock(mtx_);
+    return alloc_blocks_.size();
+  }
+
  private:
   BlockCache free_blocks_{};
   std::unordered_map<void*, Block> alloc_blocks_{};
@@ -55,35 +60,48 @@ class PinBlockCache {
   void free(void* ptr);
 
   size_t hash(size_t size) {
-    static std::hash<size_t> hash{};
-    return hash(size) % cache_group_size;
+    static std::hash<size_t> size_hash{};
+    static std::hash<std::thread::id> tid_hash{};
+    auto h1 = size_hash(size);
+    auto h2 = tid_hash(std::this_thread::get_id());
+    return ((h1 ^ (h2 << 1)) ^ (h2 >> 1)) % cache_group_size;
   }
 
   std::shared_ptr<PinBlockCacheGroup> getCacheGroup(size_t idx) {
     return cache_groups_[idx];
   }
+
   std::shared_ptr<PinBlockCacheGroup> getCacheGroup(void* ptr) {
     auto iter = block2group.find(ptr);
     if (iter == block2group.end()) {
-      // std::cerr << "------ error not found group idx: " << ptr << std::endl;
+      std::cerr << "------ error not found group idx: " << ptr << std::endl;
       return nullptr;
     }
     return cache_groups_[iter->second];
   }
 
   void setBlock2Group(void* ptr, size_t idx) {
-    // auto iter = block2group.find(ptr);
-    // if (iter != block2group.end()) {
-    //   std::cerr << "---- ptr repeated: " << ptr << "\t" << idx << std::endl;
-    // }
+    auto iter = block2group.find(ptr);
+    if (iter != block2group.end()) {
+      std::cerr << "---- ptr repeated: " << ptr << "\t" << idx << std::endl;
+    }
     block2group.insert(ptr, idx);
   }
+
   void eraseBlock2Group(void* ptr) {
-    // auto iter = block2group.find(ptr);
-    // if (iter == block2group.end()) {
-    //   std::cerr << "---- ptr not found: " << ptr << std::endl;
-    // }
+    auto iter = block2group.find(ptr);
+    if (iter == block2group.end()) {
+      std::cerr << "---- ptr not found: " << ptr << std::endl;
+    }
     block2group.erase(ptr);
+  }
+
+  size_t getAllocBlockNum() const {
+    size_t result = 0;
+    for (auto& group : cache_groups_) {
+      result += group->getAllocBlockNum();
+    }
+    return result;
   }
 
  private:
@@ -102,4 +120,8 @@ class PinMemAllocator {
   static void* alloc(size_t size) { return getThreadLocalCache().alloc(size); }
 
   static void free(void* ptr) { getThreadLocalCache().free(ptr); }
+
+  static size_t getAllocBlockNum() {
+    return getThreadLocalCache().getAllocBlockNum();
+  }
 };
