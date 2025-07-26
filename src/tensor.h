@@ -1,15 +1,15 @@
 #pragma once
+#include <experimental/bits/fs_fwd.h>
 #include <time.h>
 
 #include <boost/core/noncopyable.hpp>
 #include <functional>
+#include <initializer_list>
 #include <numeric>
-#include <ranges>
 #include <string>
 #include <vector>
 
 #include "boost/noncopyable.hpp"
-#include "cuda_runtime.h"
 #include "curand.h"
 #include "fmt/format.h"
 
@@ -18,8 +18,13 @@ class GPUTensor;
 
 class Tensor : boost::noncopyable {
  public:
+  Tensor(std::initializer_list<int> shape, size_t size)
+      : shape_(shape), size_(size), data_(nullptr) {}
+
   Tensor(const std::vector<int>& shape, size_t size)
       : shape_(shape), size_(size), data_(nullptr) {}
+
+  virtual ~Tensor() = default;
 
   template <typename T>
   GPUTensor<T>& cast() {
@@ -31,6 +36,15 @@ class Tensor : boost::noncopyable {
     return static_cast<const GPUTensor<T>&>(*this);
   }
 
+  Tensor(Tensor&& rhs) {
+    this->shape_ = std::move(rhs.shape_);
+    this->size_ = rhs.size_;
+    this->data_ = rhs.data_;
+
+    rhs.data_ = nullptr;
+    rhs.size_ = 0;
+  }
+
  protected:
   std::vector<int> shape_;
   size_t size_;
@@ -40,6 +54,12 @@ class Tensor : boost::noncopyable {
 template <typename T>
 class GPUTensor : public Tensor {
  public:
+  GPUTensor(std::initializer_list<int> shape)
+      : Tensor(shape, std::accumulate(shape.begin(), shape.end(), 1,
+                                      std::multiplies<int>{})) {
+    cudaMalloc(&data_, size_ * sizeof(T));
+  }
+
   GPUTensor(const std::vector<int>& shape)
       : Tensor(shape, std::accumulate(shape.begin(), shape.end(), 1,
                                       std::multiplies<int>{})) {
@@ -49,6 +69,8 @@ class GPUTensor : public Tensor {
   ~GPUTensor() {
     if (data_) cudaFree(data_);
   }
+
+  GPUTensor(GPUTensor&& rhs) : Tensor(std::move(rhs)) {}
 
   void random_uniform(T low = 0, T high = 1,
                       unsigned long long seed = time(nullptr)) {

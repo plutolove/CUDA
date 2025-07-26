@@ -2,16 +2,25 @@ cmake_minimum_required(VERSION 3.28)
 project(gpu_note LANGUAGES CXX CUDA)
 
 # 可选：设置 CUDA 相关编译选项
+set(CMAKE_BUILD_TYPE release)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CUDA_STANDARD 20)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CUDA_SEPARABLE_COMPILATION ON)   # 支持 device code 分离编译
 
+add_definitions(-DFMT_CONSTEVAL=)
+
 find_package(fmt REQUIRED)
 find_package(folly REQUIRED)
 find_package(Boost REQUIRED)
 
-set(SOURCES src/main.cpp src/kernel.cu src/pin_mem_allocator.cpp)
+file(GLOB_RECURSE SOURCE_FILES
+    "${CMAKE_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_SOURCE_DIR}/src/*.cu"
+    "${CMAKE_SOURCE_DIR}/src/gemm/*.cu"
+)
+
+set(SOURCES ${SOURCE_FILES})
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
