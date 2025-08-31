@@ -61,4 +61,3 @@ Diagnostics:
   Suppress:
     - "variadic_device_fn"
     - "attributes_not_allowed"
-
