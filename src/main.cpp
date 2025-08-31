@@ -1,7 +1,4 @@
-#include <cuda_runtime.h>
-
-#include "matrix_perfmance.cuh"
-#include "tensor.cuh"
+#include "matrix_perfmance.h"
 
 #define OFFSET(row, col, ld) ((row) * (ld) + (col))
 
@@ -17,8 +14,10 @@ void cpuSgemm(float* a, float* b, float* c, int M, int K, int N) {
   }
 }
 
-void naiveSgemm(float* a, float* b, float* c, int M, int N, int K);
-void SgemmCoalescing(float* a, float* b, float* c, int M, int N, int K);
+void naiveSgemm(float* a, float* b, float* c, const int M, const int N,
+                const int K);
+void SgemmCoalescing(float* a, float* b, float* c, const int M, const int N,
+                     const int K);
 
 int main() {
   MatrixPerfmance<float> test_perf(&naiveSgemm, "naive");

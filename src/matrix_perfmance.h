@@ -2,33 +2,11 @@
 #include <iostream>
 
 #include "common/macro.h"
-#include "fmt/format.h"
-#include "tensor.cuh"
-
-template <typename T>
-using GemmType = void (*)(T*, T*, T*, int, int, int);
+#include "tensor.h"
 
 template <typename T>
 float testPerformance(dim3 grid, dim3 block, GemmType<T> gemm, float* a,
-                      float* b, float* c, int M, int N, int K, int repeat) {
-  cudaEvent_t start, end;
-  cudaEventCreate(&start);
-  cudaEventCreate(&end);
-  cudaEventRecord(start);
-
-  for (int i = 0; i < repeat; i++) {
-    gemm<<<grid, block>>>(a, b, c, M, N, K);
-  }
-
-  cudaEventRecord(end);
-  cudaEventSynchronize(end);
-
-  float msec, sec;
-  cudaEventElapsedTime(&msec, start, end);
-  sec = msec / 1000.0 / repeat;
-
-  return sec;
-}
+                      float* b, float* c, int M, int N, int K, int repeat);
 
 template <typename T, size_t BM = 32, size_t BN = 32>
 struct MatrixPerfmance {
@@ -36,7 +14,7 @@ struct MatrixPerfmance {
   static const int Loop = 6;
   const int M_list[SIZE] = {8, 1024, 1536, 2048, 3072, 4096};
 
-  MatrixPerfmance(GemmType<T> gemm_, std::string name, int out_rep = 1,
+  MatrixPerfmance(GemmType<T> gemm_, const std::string& name, int out_rep = 1,
                   int inner_rep = 1)
       : gemm(gemm_),
         name(std::move(name)),

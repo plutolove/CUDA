@@ -2,9 +2,8 @@
 
 #include "common/macro.h"
 
-__global__ void naiveSgemm(float* __restrict__ a, float* __restrict__ b,
-                           float* __restrict__ c, const int M, const int N,
-                           const int K) {
+__global__ void naiveSgemm(float* a, float* b, float* c, const int M,
+                           const int N, const int K) {
   int x = blockIdx.x * blockDim.x + threadIdx.x;
   int y = blockIdx.y * blockDim.y + threadIdx.y;
   // a -> M * K
@@ -19,9 +18,8 @@ __global__ void naiveSgemm(float* __restrict__ a, float* __restrict__ b,
   }
 }
 
-__global__ void SgemmCoalescing(float* __restrict__ a, float* __restrict__ b,
-                                float* __restrict__ c, const int M, const int N,
-                                const int K) {
+__global__ void SgemmCoalescing(float* a, float* b, float* c, const int M,
+                                const int N, const int K) {
   auto thread_idx = blockDim.x * threadIdx.y + threadIdx.x;
   int x = blockIdx.x * blockDim.x + thread_idx / blockDim.x;
   int y = blockIdx.y * blockDim.y + thread_idx % blockDim.x;
