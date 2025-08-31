@@ -1,6 +1,4 @@
-#include <cstdio>
-
-#include "common/macro.h"
+#include <cuda_runtime.h>
 
 __global__ void naiveSgemm(float* a, float* b, float* c, const int M,
                            const int N, const int K) {
