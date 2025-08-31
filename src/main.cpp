@@ -1,7 +1,4 @@
-#include <cuda_runtime.h>
-
 #include "matrix_perfmance.h"
-#include "tensor.h"
 
 #define OFFSET(row, col, ld) ((row) * (ld) + (col))
 
@@ -17,26 +14,15 @@ void cpuSgemm(float* a, float* b, float* c, int M, int K, int N) {
   }
 }
 
-void naiveSgemm(float* a, float* b, float* c, int M, int N, int K);
-void sgemm_V1(float* a, float* b, float* c, int M, int N, int K);
-
-const int BM = 64;
-const int BN = 64;
-const int TN = 8;
-const int TM = 8;
+void naiveSgemm(float* a, float* b, float* c, const int M, const int N,
+                const int K);
+void SgemmCoalescing(float* a, float* b, float* c, const int M, const int N,
+                     const int K);
 
 int main() {
-  MatrixPerfmance test_perf(&sgemm_V1, 3, 3);
-  test_perf(
-      [](int N, int M) {
-        // dim3 gridDim((N + BN - 1) / BN, (M + BM - 1) / BM);
-        dim3 gridDim((N + BN - 1) / BN, (M + BM - 1) / BM);
-        return gridDim;
-      },
-      []() {
-        // dim3 blockDim(BN, BM);
-        dim3 blockDim(BN / TN, BM / TM);
-        return blockDim;
-      });
+  MatrixPerfmance<float> test_perf(&naiveSgemm, "naive");
+  MatrixPerfmance<float> test_perf1(&SgemmCoalescing, "coalescing");
+  test_perf();
+  test_perf1();
   return 0;
 }

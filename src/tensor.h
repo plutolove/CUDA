@@ -1,22 +1,18 @@
 #pragma once
-#include <experimental/bits/fs_fwd.h>
+#include <fmt/format.h>
 #include <time.h>
 
-#include <boost/core/noncopyable.hpp>
-#include <functional>
 #include <initializer_list>
 #include <numeric>
 #include <string>
 #include <vector>
 
-#include "boost/noncopyable.hpp"
 #include "curand.h"
-#include "fmt/format.h"
 
 template <typename T>
 class GPUTensor;
 
-class Tensor : boost::noncopyable {
+class Tensor {
  public:
   Tensor(std::initializer_list<int> shape, size_t size)
       : shape_(shape), size_(size), data_(nullptr) {}

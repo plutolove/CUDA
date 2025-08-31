@@ -1,82 +1,63 @@
+# Apply this config conditionally to all C files
+If:
+  PathMatch: .*\.(c|h)$
 CompileFlags:
-  Add: [
-    --no-cuda-version-check
-  ]
-  Remove: [
-    -rdc=*,
-    -arch=*,
-    --options-file,
-    -Xcudafe,
-    -Xcudafe=*,
-    --compress-all,
-    -compress-all,
-    --gencode,
-    -gencode,
-    -forward-unknown-to-host-compiler,
-    -Xfatbin,
-    -Xcompiler=*,
-    --expt-extended-lambda,
-    --expt-relaxed-constexpr,
-    --diag_suppress=*,
-    -Xcudafe--diag_suppress=field_without_dll_interface,
-    -Xcudafe--diag_suppress=base_class_has_different_dll_interface,
-    -Xcudafe--diag_suppress=dll_interface_conflict_none_assumed,
-    -Xcudafe--diag_suppress=dll_interface_conflict_dllexport_assumed,
-    -Xcudafe--diag_suppress=bad_friend_decl
-  ]
-  # Compiler: /usr/bin/g++
-  # Remove: [
-  #   -compress-all,
-  #   -gencode,
-  #   -forward-unknown-to-host-compiler,
-  #   -Xfatbin,
-  #   -Xcompiler=-fPI,
-  #   --expt-extended-lambda,
-  #   --expt-relaxed-constexpr,
-  #   --diag_suppress=cc_clobber_ignored,
-  #   --diag_suppress=field_without_dll_interface,
-  #   --diag_suppress=base_class_has_different_dll_interface,
-  #   --diag_suppress=dll_interface_conflict_none_assumed,
-  #   --diag_suppress=dll_interface_conflict_dllexport_assumed,
-  #   --diag_suppress=bad_friend_decl
-  # ] 
-/*
+  Compiler: /usr/bin/gcc-13
+
+---
+
+# Apply this config conditionally to all C++ files
+If:
+  PathMatch: .*\.(c|h)pp
 CompileFlags:
-  Add: [
-    -std=c++17,
-    --cuda-path=/opt/tiger/cuda_11_2_460_gcc8,
-    -L/opt/tiger/cuda_11_2_460_gcc8/lib64,
-    -I/opt/tiger/cuda_11_2_460_gcc8/include,
-    -I/data00/home/mengshangqi.123/cutlass/include,
-    -I/data00/home/mengshangqi.123/cutlass/tools/library/include,
-    -I/data00/home/mengshangqi.123/cutlass/tools/library/src,
-    -I/data00/home/mengshangqi.123/cutlass/tools/util/include,
-    // --cuda-gpu-arch=sm_86,
-  ]
-  Remove: [
-    --options-file,
-    -rdc=true,
-    --ccbin=*,
-    -forward-unknown-to-host-compiler,
-    -generate-code=*,
-    -Xcudafe,
-    -Xcudafe=*,
-    --compress-all,
-    -compress-all,
-    --gencode,
-    -gencode,
-    -forward-unknown-to-host-compiler,
-    -Xfatbin,
-    -Xcompiler=*,
-    --expt-extended-lambda,
-    --expt-relaxed-constexpr,
-    --diag_suppress=*,
-    -Xcudafe--diag_suppress=field_without_dll_interface,
-    -Xcudafe--diag_suppress=base_class_has_different_dll_interface,
-    -Xcudafe--diag_suppress=dll_interface_conflict_none_assumed,
-    -Xcudafe--diag_suppress=dll_interface_conflict_dllexport_assumed,
-    -Xcudafe--diag_suppress=bad_friend_decl,
-    --generate-code=*,
- ]
- cmake .. -DCUTLASS_NVCC_ARCHS=120 -DCUTLASS_ENABLE_TESTS=OFF -DCUTLASS_UNITY_BUILD_ENABLED=ON -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-*/
+  Compiler: /usr/bin/g++-13
+
+---
+
+# Apply this config conditionally to all CUDA files
+If:
+  PathMatch: .*\.cuh?
+CompileFlags:
+  Compiler: /usr/local/cuda-13.0/bin/nvcc
+
+---
+
+# Tweak the clangd parse settings for all files
+CompileFlags:
+  Add:
+    # report all errors
+    - "-std=c++17"
+    - "-ferror-limit=0"
+    - "--cuda-path=/usr/local/cuda-13.0"
+    - "-L/usr/local/cuda-13.0/lib64"
+    - "-I/usr/local/cuda-13.0/include"
+    - "-I/usr/local/cuda-13.0/include/cccl"
+  Remove:
+    # strip CUDA fatbin args
+    - "-Xfatbin*"
+    # strip CUDA arch flags
+    - "-gencode*"
+    - "--generate-code*"
+    # strip CUDA flags unknown to clang
+    - "-ccbin*"
+    - "--compiler-options*"
+    - "--expt-extended-lambda"
+    - "--expt-relaxed-constexpr"
+    - "-forward-unknown-to-host-compiler"
+    - "-Werror=cross-execution-space-call"
+    - "-compress-all"
+    - "-Xcudafe"
+    - "--diag_suppress=*"
+    - "-Xcompiler=*"
+    - "-rdc=*"
+    - "-arch=*"
+    - "--options-file"
+    - "-forward-unknown-to-host-compiler"
+Hover:
+  ShowAKA: No
+InlayHints:
+  Enabled: No
+Diagnostics:
+  Suppress:
+    - "variadic_device_fn"
+    - "attributes_not_allowed"
