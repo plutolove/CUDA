@@ -9,6 +9,9 @@ void SgemmCoalescing(float* a, float* b, float* c, const int M, const int N,
 void SgemmCoalescing_v1(float* a, float* b, float* c, const int M, const int N,
                         const int K);
 
+void sharedMemGemm(float* a, float* b, float* c, const int M, const int N,
+                   const int K);
+
 int main() {
   MatrixPerfmance<float> test_perf(&naiveSgemm, "naive");
   MatrixPerfmance<float> test_perf1(&SgemmCoalescing, "coalescing");
@@ -17,8 +20,15 @@ int main() {
         return dim3(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
       },
       &SgemmCoalescing_v1, "coalescing_v1");
-  test_perf();
-  test_perf1();
-  test_perf2();
+  MatrixPerfmance<float> test_perf3(
+      [](int M, int N, int /*unused*/, int BM, int BN) {
+        return dim3(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
+      },
+      &sharedMemGemm, "shared_mem_gemm_v1");
+
+  // test_perf();
+  // test_perf1();
+  // test_perf2();
+  test_perf3();
   return 0;
 }

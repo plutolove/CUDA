@@ -11,9 +11,9 @@ float testPerformance(dim3 grid, dim3 block, GemmType<T> gemm, float* a,
 
 template <typename T, size_t BM = 32, size_t BN = 32>
 struct MatrixPerfmance {
-  static const int SIZE = 6;
-  static const int Loop = 6;
-  const int M_list[SIZE] = {8, 1024, 1536, 2048, 3072, 4096};
+  static const int SIZE = 5;
+  static const int Loop = 5;
+  const int M_list[SIZE] = {1024, 1536, 2048, 3072, 4096};
 
   MatrixPerfmance(std::function<dim3(int, int, int, int, int)> func,
                   GemmType<T> gemm_, const std::string& name, int out_rep = 1,
@@ -77,14 +77,14 @@ struct MatrixPerfmance {
       double total_sec = 0.0;
 
       auto* a = lhs[i].mutable_data();
-      // auto a_cpu = lhs[i].to_host();
+      auto a_cpu = lhs[i].to_host();
       auto* b = rhs[i].mutable_data();
-      // auto b_cpu = lhs[i].to_host();
+      auto b_cpu = lhs[i].to_host();
       auto* c = result[i].mutable_data();
-      // auto c_cpu = result[i].to_host();
+      auto c_cpu = result[i].to_host();
 
-      // cpuSgemm(a_cpu.data(), b_cpu.data(), c_cpu.data(), M, N, K);
-      // std::cerr << fmt::format("[{}]", fmt::join(c_cpu, ",")) << std::endl;
+      cpuSgemm(a_cpu.data(), b_cpu.data(), c_cpu.data(), M, N, K);
+      std::cerr << fmt::format("[{}]", fmt::join(c_cpu, ",")) << std::endl;
 
       for (int j = 0; j < out_rep_num; j++) {
         double this_sec = testPerformance(gridDim, blockDim, gemm, a, b, c, M,
@@ -93,7 +93,7 @@ struct MatrixPerfmance {
         min_sec = std::min(min_sec, this_sec);
         total_sec += this_sec;
       }
-      // std::cerr << result[i].to_string() << std::endl;
+      std::cerr << result[i].to_string() << std::endl;
 
       double avg_sec = total_sec / out_rep_num;
       double avg_Gflops =
