@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <iostream>
 
 #include "common/macro.h"
@@ -13,6 +14,24 @@ struct MatrixPerfmance {
   static const int SIZE = 6;
   static const int Loop = 6;
   const int M_list[SIZE] = {8, 1024, 1536, 2048, 3072, 4096};
+
+  MatrixPerfmance(std::function<dim3(int, int, int, int, int)> func,
+                  GemmType<T> gemm_, const std::string& name, int out_rep = 1,
+                  int inner_rep = 1)
+      : grid_dim_func(std::move(func)),
+        gemm(gemm_),
+        name(std::move(name)),
+        out_rep_num(out_rep),
+        inner_rep_num(inner_rep) {
+    lhs.reserve(SIZE);
+    for (size_t i = 0; i < SIZE; i++) {
+      lhs.emplace_back(std::initializer_list<int>{M_list[i], M_list[i]});
+      rhs.emplace_back(std::initializer_list<int>{M_list[i], M_list[i]});
+      lhs.back().random_uniform();
+      rhs.back().random_uniform();
+      result.emplace_back(std::initializer_list<int>{M_list[i], M_list[i]});
+    }
+  }
 
   MatrixPerfmance(GemmType<T> gemm_, const std::string& name, int out_rep = 1,
                   int inner_rep = 1)
@@ -48,7 +67,10 @@ struct MatrixPerfmance {
       const int M = M_list[i], N = M_list[i], K = M_list[i];
 
       dim3 blockDim(BN, BM);
-      dim3 gridDim(CEIL_DIV(N, BN), CEIL_DIV(M, BM));
+      dim3 gridDim(CEIL_DIV(M, BM), CEIL_DIV(N, BN));
+      if (grid_dim_func) {
+        gridDim = grid_dim_func(M, N, K, BM, BN);
+      }
 
       double max_sec = 0.0;
       double min_sec = 1000;
@@ -85,6 +107,7 @@ struct MatrixPerfmance {
     }
   }
 
+  std::function<dim3(int, int, int, int, int)> grid_dim_func;
   GemmType<T> gemm;
   std::string name;
   int out_rep_num{1};

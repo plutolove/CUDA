@@ -16,6 +16,19 @@ __global__ void naiveSgemm(float* a, float* b, float* c, const int M,
   }
 }
 
+__global__ void SgemmCoalescing_v1(float* a, float* b, float* c, const int M,
+                                   const int N, const int K) {
+  auto y = blockIdx.y * blockDim.y + threadIdx.y;
+  auto x = blockIdx.x * blockDim.x + threadIdx.x;
+  if (y < M && x < N) {
+    float sum = 0;
+    for (size_t k = 0; k < K; ++k) {
+      sum += a[y * K + k] * b[k * N + x];
+    }
+    c[y * N + x] = sum;
+  }
+}
+
 __global__ void SgemmCoalescing(float* a, float* b, float* c, const int M,
                                 const int N, const int K) {
   auto thread_idx = blockDim.x * threadIdx.y + threadIdx.x;
