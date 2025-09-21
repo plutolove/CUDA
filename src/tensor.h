@@ -9,6 +9,49 @@
 
 #include "curand.h"
 
+namespace detail {
+template <typename T, size_t show_elements = 3>
+std::string to_string(const std::vector<T>& vec) {
+  if (vec.empty()) {
+    return fmt::format("[] (size: 0)");
+  }
+
+  if (vec.size() <= 2 * show_elements) {
+    std::string result = "[";
+    for (size_t i = 0; i < vec.size(); ++i) {
+      if (i > 0) {
+        result += ", ";
+      }
+      result += fmt::format("{}", vec[i]);
+    }
+    result += fmt::format("] (size: {})", vec.size());
+    return result;
+  }
+
+  std::string result = "[";
+
+  // 显示前show_elements个元素
+  for (size_t i = 0; i < show_elements; ++i) {
+    result += fmt::format("{}, ", vec[i]);
+  }
+
+  // 显示省略号
+  result += "... ";
+
+  // 显示后show_elements个元素
+  for (size_t i = vec.size() - show_elements; i < vec.size(); ++i) {
+    if (i > vec.size() - show_elements) {
+      result += ", ";
+    }
+    result += fmt::format("{}", vec[i]);
+  }
+
+  result += fmt::format("] (size: {})", vec.size());
+  return result;
+  // return fmt::format("[{}]", fmt::join(vec, ", "));
+}
+}  // namespace detail
+
 template <typename T>
 class GPUTensor;
 
@@ -95,8 +138,45 @@ class GPUTensor : public Tensor {
   const T* data() const { return reinterpret_cast<const T*>(data_); }
 
   std::string to_string() const {
+    const int show_elements = 3;
     auto vec = to_host();
-    return fmt::format("[{}]", fmt::join(vec, ", "));
+    if (vec.empty()) {
+      return fmt::format("[] (size: 0)");
+    }
+
+    if (vec.size() <= 2 * show_elements) {
+      std::string result = "[";
+      for (size_t i = 0; i < vec.size(); ++i) {
+        if (i > 0) {
+          result += ", ";
+        }
+        result += fmt::format("{}", vec[i]);
+      }
+      result += fmt::format("] (size: {})", vec.size());
+      return result;
+    }
+
+    std::string result = "[";
+
+    // 显示前show_elements个元素
+    for (size_t i = 0; i < show_elements; ++i) {
+      result += fmt::format("{}, ", vec[i]);
+    }
+
+    // 显示省略号
+    result += "... ";
+
+    // 显示后show_elements个元素
+    for (size_t i = vec.size() - show_elements; i < vec.size(); ++i) {
+      if (i > vec.size() - show_elements) {
+        result += ", ";
+      }
+      result += fmt::format("{}", vec[i]);
+    }
+
+    result += fmt::format("] (size: {})", vec.size());
+    return result;
+    // return fmt::format("[{}]", fmt::join(vec, ", "));
   }
 
   const std::vector<int>& shape() const { return shape_; }
