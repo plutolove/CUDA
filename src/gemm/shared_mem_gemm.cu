@@ -67,7 +67,6 @@ __global__ void sharedMemGemm_v1(float* a, float* b, float* c, const int M,
   __shared__ float As[BM][BK];
   __shared__ float Bs[BK][BN];
   float Tc[TM][TN] = {0.0};
-  float sum = 0;
   for (int bkidx = 0; bkidx < CEIL_DIV(K, BK); bkidx++) {
     auto load_gmem_a_k = bkidx * BK + load_smem_a_k;
     auto load_gmem_a_addr = load_gmem_a_m * K + load_gmem_a_k;
@@ -87,9 +86,9 @@ __global__ void sharedMemGemm_v1(float* a, float* b, float* c, const int M,
   }
   for (int m = 0; m < TM; m++) {
     auto store_gmem_m = by * BM + ty * TM + m;
-    for (int n = 0; n < TN; n++) {
+    for (int n = 0; n < TN; n += 4) {
       auto store_gmem_n = bx * BN + tx * TN + n;
-      c[store_gmem_m * N + store_gmem_n] = Tc[m][n];
+      FLOAT4(c[store_gmem_m * N + store_gmem_n]) = FLOAT4(Tc[m][n]);
     }
   }
 }
