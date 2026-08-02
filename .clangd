@@ -53,6 +53,9 @@ CompileFlags:
     - "-arch=*"
     - "--options-file"
     - "-forward-unknown-to-host-compiler"
+    - "-fmodules-ts"
+    - "-fmodule-mapper=*"
+    - "-fdeps-format=*"
 Hover:
   ShowAKA: No
 InlayHints:
